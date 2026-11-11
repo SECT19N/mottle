@@ -1,11 +1,11 @@
-import { useSyncExternalStore } from "react"
+import { useSyncExternalStore } from "react";
 
-const QUERY = "(max-width: 767px)"
+const QUERY = "(max-width: 767px)";
 
 function subscribe(cb: () => void) {
-  const mql = window.matchMedia(QUERY)
-  mql.addEventListener("change", cb)
-  return () => mql.removeEventListener("change", cb)
+  const mql = window.matchMedia(QUERY);
+  mql.addEventListener("change", cb);
+  return () => mql.removeEventListener("change", cb);
 }
 
 export function useIsMobile() {
@@ -13,5 +13,5 @@ export function useIsMobile() {
     subscribe,
     () => window.matchMedia(QUERY).matches,
     () => false,
-  )
+  );
 }

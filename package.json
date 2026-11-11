@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "pnpm dlx serve out",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -26,6 +28,8 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^10.14.0",
     "eslint-config-next": "^16.4.6",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^6.0.3"
   },
