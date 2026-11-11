@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { colorCombinations } from "@/data/colors";
+import { colorCombinations } from "@/data";
 import { ColorCard, ColorDetail } from "@/components/ColorComponents";
 import { AnimatePresence } from "motion/react";
 import { Search, X, Heart } from "lucide-react";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ColorCombination } from "@/data/colors";
+import { ColorCombination } from "@/data";
 import { cn, hexToRgb } from "@/lib/utils";
 import { Copy, Check, Heart, Share2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
