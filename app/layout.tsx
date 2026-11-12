@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, Fira_Code } from "next/font/google";
 import "./globals.css"; // Global styles
 import { ThemeProvider } from "@/components/theme-provider";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, absoluteUrl } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +20,7 @@ const firaCode = Fira_Code({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(absoluteUrl("/")),
   title: {
     default: `${SITE_NAME} | A Dictionary of Color Combinations`,
     template: `%s | ${SITE_NAME}`,

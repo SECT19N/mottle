@@ -7,27 +7,32 @@ import { AnimatePresence } from "motion/react";
 import { Search, X, Heart } from "lucide-react";
 import { useSaved } from "@/hooks/use-saved";
 import { ThemeToggle } from "@/components/theme-toggle";
-
-const COLOR_CATEGORIES = [
-  { name: "Red", hex: "#D64F3E" },
-  { name: "Blue", hex: "#008DB7" },
-  { name: "Green", hex: "#6B7C47" },
-  { name: "Yellow", hex: "#E8D62E" },
-  { name: "Orange", hex: "#E65218" },
-  { name: "Purple", hex: "#543986" },
-  { name: "Pink", hex: "#E0B6B6" },
-  { name: "Brown", hex: "#5E3A48" },
-  { name: "Gray", hex: "#3E4C53" },
-];
+import { ColorFilterBar } from "@/components/ColorFilterBar";
+import {
+  categorize,
+  hexToHsl,
+  matchesToken,
+  COLOR_CATEGORIES,
+} from "@/lib/colors";
 
 type Filter = "all" | ColorCombination["type"] | "saved" | "create";
 
 // Tabs follow whatever palette sizes exist in the data (2/3/4 and the lone 5-color).
+// Every distinct color in the dataset, grouped by family and ordered light -> dark.
+const allUniqueColors = (() => {
+  const map = new Map<string, { hex: string; name: string }>();
+  for (const combo of colorCombinations)
+    for (const c of combo.colors) if (!map.has(c.hex)) map.set(c.hex, c);
+  const order = COLOR_CATEGORIES.map((c) => c.name as string);
+  return [...map.values()].sort(
+    (a, b) =>
+      order.indexOf(categorize(a.hex)) - order.indexOf(categorize(b.hex)) ||
+      hexToHsl(b.hex)[2] - hexToHsl(a.hex)[2],
+  );
+})();
+
 const TYPE_TABS = [...new Set(colorCombinations.map((c) => c.type))].sort();
 const FILTERS: Filter[] = ["all", ...TYPE_TABS, "saved", "create"];
-
-const nameHas = (name: string, term: string) =>
-  name.toLowerCase().includes(term.toLowerCase());
 
 export function Gallery() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -47,19 +52,6 @@ export function Gallery() {
     { hex: string; name: string }[]
   >([]);
 
-  // Extract unique colors for builder
-  const allUniqueColors = useMemo(() => {
-    const uniqueMap = new Map<string, { hex: string; name: string }>();
-    colorCombinations.forEach((combo) => {
-      combo.colors.forEach((color) => {
-        if (!uniqueMap.has(color.hex)) {
-          uniqueMap.set(color.hex, { hex: color.hex, name: color.name });
-        }
-      });
-    });
-    return Array.from(uniqueMap.values());
-  }, []);
-
   // Filter unique colors for builder based on search/filter
   const filteredBuilderColors = useMemo(() => {
     return allUniqueColors.filter((color) => {
@@ -69,11 +61,11 @@ export function Gallery() {
 
       const matchesColor =
         colorFilters.length === 0 ||
-        colorFilters.some((f) => nameHas(color.name, f));
+        colorFilters.some((f) => matchesToken(color.hex, f));
 
       return matchesSearch && matchesColor;
     });
-  }, [allUniqueColors, searchQuery, colorFilters]);
+  }, [searchQuery, colorFilters]);
 
   const selectedCombination = useMemo(
     () => colorCombinations.find((c) => c.id === selectedId),
@@ -97,7 +89,7 @@ export function Gallery() {
         );
 
       const hit = (f: string) =>
-        c.colors.some((color) => nameHas(color.name, f));
+        c.colors.some((color) => matchesToken(color.hex, f));
       const matchesColor =
         colorFilters.length === 0 ||
         (matchMode === "all"
@@ -172,57 +164,14 @@ export function Gallery() {
             </div>
           </div>
 
-          {/* Color Filter */}
-          <div className="no-scrollbar flex flex-nowrap items-center gap-2 overflow-x-auto border-t border-stone-200/50 pt-4 pb-2 dark:border-stone-800/50">
-            <span className="mr-2 font-mono text-xs tracking-wider whitespace-nowrap text-stone-400 uppercase">
-              Filter by Color:
-            </span>
-            {COLOR_CATEGORIES.map((category) => (
-              <button
-                key={category.name}
-                onClick={() => toggleColorFilter(category.name)}
-                aria-pressed={colorFilters.includes(category.name)}
-                className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all ${
-                  colorFilters.includes(category.name)
-                    ? "border-stone-300 bg-white text-stone-900 shadow-sm ring-1 ring-stone-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:ring-stone-800"
-                    : "border-transparent bg-transparent text-stone-600 hover:bg-white/60 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-900/60 dark:hover:text-stone-200"
-                }`}
-              >
-                <div
-                  className="h-4 w-4 rounded-full border border-stone-200 shadow-sm dark:border-stone-700"
-                  style={{ backgroundColor: category.hex }}
-                />
-                {category.name}
-              </button>
-            ))}
-            {colorFilters.length > 1 && (
-              <div className="ml-2 flex shrink-0 rounded-full border border-stone-200 bg-white p-0.5 text-xs dark:border-stone-800 dark:bg-stone-900">
-                {(["any", "all"] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMatchMode(m)}
-                    aria-pressed={matchMode === m}
-                    className={`rounded-full px-3 py-1 font-medium capitalize transition-colors ${
-                      matchMode === m
-                        ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
-                        : "text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            )}
-            {colorFilters.length > 0 && (
-              <button
-                onClick={() => setColorFilters([])}
-                className="ml-2 flex items-center gap-1 text-xs whitespace-nowrap text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
-              >
-                <X className="h-3 w-3" />
-                Clear
-              </button>
-            )}
-          </div>
+          <ColorFilterBar
+            allColors={allUniqueColors}
+            tokens={colorFilters}
+            onToggle={toggleColorFilter}
+            onClear={() => setColorFilters([])}
+            mode={matchMode}
+            onModeChange={setMatchMode}
+          />
         </header>
 
         {/* Grid */}

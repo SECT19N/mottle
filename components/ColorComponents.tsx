@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { ColorCombination } from "@/data";
 import { cn, formatId, hexToRgb } from "@/lib/utils";
+import { BASE_PATH } from "@/lib/site";
 import { Copy, Check, Heart, Share2, ArrowUpRight } from "lucide-react";
 
 /** Copy text and flash a "copied" state for 2s. */
@@ -178,7 +179,7 @@ export function ShareButton({
   className?: string;
 }) {
   const { copied, copy } = useCopy();
-  const url = () => `${window.location.origin}/combo/${id}`;
+  const url = () => `${window.location.origin}${BASE_PATH}/combo/${id}`;
   return (
     <button
       onClick={() => copy(url())}
