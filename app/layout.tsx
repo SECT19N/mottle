@@ -1,27 +1,48 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, Fira_Code } from "next/font/google";
 import "./globals.css"; // Global styles
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
 });
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-playfair",
 });
 
 const firaCode = Fira_Code({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-fira",
 });
 
 export const metadata: Metadata = {
-  title: "Mottle | A Dictionary of Color Combinations",
-  description:
-    "A digital archive of color combinations inspired by Sanzo Wada.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: `${SITE_NAME} | A Dictionary of Color Combinations`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} | A Dictionary of Color Combinations`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+  twitter: { card: "summary_large_image" },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F4F1EA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0a09" },
+  ],
 };
 
 export default function RootLayout({

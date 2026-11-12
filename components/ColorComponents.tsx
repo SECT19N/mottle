@@ -1,11 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { ColorCombination } from "@/data";
-import { cn, hexToRgb } from "@/lib/utils";
-import { Copy, Check, Heart, Share2 } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { cn, formatId, hexToRgb } from "@/lib/utils";
+import { Copy, Check, Heart, Share2, ArrowUpRight } from "lucide-react";
+
+/** Copy text and flash a "copied" state for 2s. */
+export function useCopy() {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    setTimeout(() => setCopied((c) => (c === text ? null : c)), 2000);
+  };
+  return { copied, copy };
+}
 
 interface ColorCardProps {
   combination: ColorCombination;
@@ -41,22 +52,24 @@ export function ColorCard({
           ))}
         </div>
 
-        {/* Save Button Overlay */}
-        <button
-          onClick={onToggleSave}
-          className={cn(
-            "absolute top-2 right-2 z-10 rounded-full bg-white/90 p-2 shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-110 dark:bg-stone-900/90",
-            isSaved
-              ? "text-red-500"
-              : "text-stone-400 opacity-0 group-hover:opacity-100 hover:text-red-500",
-          )}
-        >
-          <Heart className={cn("h-4 w-4", isSaved && "fill-current")} />
-        </button>
+        {onToggleSave && (
+          <button
+            onClick={onToggleSave}
+            aria-label={isSaved ? "Remove from saved" : "Save combination"}
+            className={cn(
+              "absolute top-2 right-2 z-10 rounded-full bg-white/90 p-2 shadow-sm backdrop-blur-sm transition-all duration-200 hover:scale-110 dark:bg-stone-900/90",
+              isSaved
+                ? "text-red-500"
+                : "text-stone-400 opacity-0 group-hover:opacity-100 hover:text-red-500 focus-visible:opacity-100",
+            )}
+          >
+            <Heart className={cn("h-4 w-4", isSaved && "fill-current")} />
+          </button>
+        )}
       </div>
       <div className="flex items-baseline justify-between px-1">
         <span className="font-mono text-xs text-stone-500 dark:text-stone-400">
-          #{combination.id.toString().padStart(3, "0")}
+          #{formatId(combination.id)}
         </span>
         <div className="flex gap-1">
           {combination.colors.map((c, i) => (
@@ -69,6 +82,149 @@ export function ColorCard({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function CopyRow({
+  label,
+  value,
+  copied,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  copied: string | null;
+  onCopy: (text: string) => void;
+}) {
+  return (
+    <div className="group/format flex items-center justify-between font-mono text-xs text-stone-500 dark:text-stone-400">
+      <span>{label}</span>
+      <button
+        onClick={() => onCopy(value)}
+        className="flex items-center gap-1 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
+      >
+        {value}
+        {copied === value ? (
+          <Check className="h-3 w-3 text-emerald-600" />
+        ) : (
+          <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover/format:opacity-100" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+/** Name + HEX / RGB / RGBA / CMYK rows for every color in a combination. */
+export function ColorSpecs({
+  combination,
+  copied,
+  onCopy,
+}: {
+  combination: ColorCombination;
+  copied: string | null;
+  onCopy: (text: string) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      {combination.colors.map((color, index) => {
+        const rgb = hexToRgb(color.hex);
+        return (
+          <div key={index}>
+            <div className="mb-2 flex items-center gap-3">
+              <div
+                className="h-4 w-4 rounded-full border border-stone-100 shadow-sm dark:border-stone-800"
+                style={{ backgroundColor: color.hex }}
+              />
+              <h3 className="font-medium text-stone-900 dark:text-stone-100">
+                {color.name}
+              </h3>
+            </div>
+            <div className="space-y-3 pl-7">
+              <CopyRow
+                label="HEX"
+                value={color.hex}
+                copied={copied}
+                onCopy={onCopy}
+              />
+              {rgb && (
+                <>
+                  <CopyRow
+                    label="RGB"
+                    value={`rgb(${rgb})`}
+                    copied={copied}
+                    onCopy={onCopy}
+                  />
+                  <CopyRow
+                    label="RGBA"
+                    value={`rgba(${rgb}, 1)`}
+                    copied={copied}
+                    onCopy={onCopy}
+                  />
+                </>
+              )}
+              {color.cmyk && (
+                <CopyRow
+                  label="CMYK"
+                  value={color.cmyk}
+                  copied={copied}
+                  onCopy={onCopy}
+                />
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ShareButton({
+  id,
+  className,
+}: {
+  id: number;
+  className?: string;
+}) {
+  const { copied, copy } = useCopy();
+  const url = () => `${window.location.origin}/combo/${id}`;
+  return (
+    <button
+      onClick={() => copy(url())}
+      className={className}
+      title="Copy link"
+      aria-label="Copy link"
+    >
+      {copied ? (
+        <Check className="h-5 w-5 text-emerald-600" />
+      ) : (
+        <Share2 className="h-5 w-5" />
+      )}
+    </button>
+  );
+}
+
+export function SaveButton({
+  isSaved,
+  onToggle,
+  className,
+}: {
+  isSaved?: boolean;
+  onToggle?: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={onToggle}
+      className={cn(
+        "rounded-full p-2 transition-colors hover:bg-stone-100 dark:hover:bg-stone-900",
+        isSaved ? "text-red-500" : "text-stone-400 hover:text-red-500",
+        className,
+      )}
+      title={isSaved ? "Remove from saved" : "Save combination"}
+      aria-label={isSaved ? "Remove from saved" : "Save combination"}
+    >
+      <Heart className={cn("h-5 w-5", isSaved && "fill-current")} />
+    </button>
   );
 }
 
@@ -85,23 +241,7 @@ export function ColorDetail({
   isSaved,
   onToggleSave,
 }: ColorDetailProps) {
-  const [copiedHex, setCopiedHex] = useState<string | null>(null);
-  const [hasShared, setHasShared] = useState(false);
-  const isMobile = useIsMobile();
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedHex(text);
-    setTimeout(() => setCopiedHex(null), 2000);
-  };
-
-  const handleShare = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("id", combination.id.toString());
-    navigator.clipboard.writeText(url.toString());
-    setHasShared(true);
-    setTimeout(() => setHasShared(false), 2000);
-  };
+  const { copied, copy } = useCopy();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8">
@@ -116,11 +256,9 @@ export function ColorDetail({
         layoutId={`card-${combination.id}`}
         className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-[#F4F1EA] shadow-2xl dark:bg-stone-900"
       >
-        <div className={`flex ${isMobile ? "flex-col" : "flex-row"} h-full`}>
+        <div className="flex h-full min-h-0 flex-col md:flex-row">
           {/* Visual Representation */}
-          <div
-            className={`${isMobile ? "h-48 shrink-0" : "flex-1"} flex ${isMobile ? "flex-row" : "flex-col md:flex-row"}`}
-          >
+          <div className="flex h-48 shrink-0 flex-row md:h-auto md:flex-1">
             {combination.colors.map((color, index) => (
               <div
                 key={index}
@@ -131,11 +269,11 @@ export function ColorDetail({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      copyToClipboard(color.hex);
+                      copy(color.hex);
                     }}
                     className="rounded-full bg-white/90 px-3 py-1.5 font-mono text-xs tracking-wider text-stone-900 uppercase shadow-sm hover:bg-white dark:bg-stone-900/90 dark:text-stone-100 dark:hover:bg-stone-800"
                   >
-                    {copiedHex === color.hex ? (
+                    {copied === color.hex ? (
                       <Check className="mr-1 inline h-3 w-3" />
                     ) : (
                       <Copy className="mr-1 inline h-3 w-3" />
@@ -148,9 +286,7 @@ export function ColorDetail({
           </div>
 
           {/* Info Panel */}
-          <div
-            className={`${isMobile ? "w-full flex-1 overflow-y-auto" : "w-80 border-l"} flex flex-col border-stone-200 bg-white p-6 md:p-8 dark:border-stone-800 dark:bg-stone-950`}
-          >
+          <div className="flex w-full flex-1 flex-col overflow-y-auto border-stone-200 bg-white p-6 md:w-80 md:flex-none md:border-l md:p-8 dark:border-stone-800 dark:bg-stone-950">
             <div className="mb-8 flex items-start justify-between">
               <div>
                 <h2 className="mb-1 font-serif text-3xl text-stone-900 italic dark:text-stone-100">
@@ -160,127 +296,29 @@ export function ColorDetail({
                   {combination.type}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleShare}
+              <div className="flex gap-1">
+                <ShareButton
+                  id={combination.id}
                   className="relative rounded-full p-2 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:hover:bg-stone-900 dark:hover:text-stone-100"
-                  title="Copy link"
-                >
-                  {hasShared ? (
-                    <Check className="h-5 w-5 text-emerald-600" />
-                  ) : (
-                    <Share2 className="h-5 w-5" />
-                  )}
-                </button>
-                <button
-                  onClick={onToggleSave}
-                  className={cn(
-                    "rounded-full p-2 transition-colors hover:bg-stone-100 dark:hover:bg-stone-900",
-                    isSaved
-                      ? "text-red-500"
-                      : "text-stone-400 hover:text-red-500",
-                  )}
-                  title={isSaved ? "Remove from saved" : "Save combination"}
-                >
-                  <Heart className={cn("h-5 w-5", isSaved && "fill-current")} />
-                </button>
+                />
+                <SaveButton isSaved={isSaved} onToggle={onToggleSave} />
               </div>
             </div>
 
-            <div className="space-y-6">
-              {combination.colors.map((color, index) => (
-                <div key={index} className="group">
-                  <div className="mb-2 flex items-center gap-3">
-                    <div
-                      className="h-4 w-4 rounded-full border border-stone-100 shadow-sm dark:border-stone-800"
-                      style={{ backgroundColor: color.hex }}
-                    />
-                    <h3 className="font-medium text-stone-900 dark:text-stone-100">
-                      {color.name}
-                    </h3>
-                  </div>
-                  <div className="space-y-3 pl-7">
-                    {/* HEX */}
-                    <div className="group/format flex items-center justify-between font-mono text-xs text-stone-500 dark:text-stone-400">
-                      <span>HEX</span>
-                      <button
-                        onClick={() => copyToClipboard(color.hex)}
-                        className="flex items-center gap-1 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
-                      >
-                        {color.hex}
-                        {copiedHex === color.hex ? (
-                          <Check className="h-3 w-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover/format:opacity-100" />
-                        )}
-                      </button>
-                    </div>
+            <ColorSpecs
+              combination={combination}
+              copied={copied}
+              onCopy={copy}
+            />
 
-                    {/* RGB */}
-                    <div className="group/format flex items-center justify-between font-mono text-xs text-stone-500 dark:text-stone-400">
-                      <span>RGB</span>
-                      <button
-                        onClick={() => {
-                          const rgb = hexToRgb(color.hex);
-                          if (rgb) copyToClipboard(`rgb(${rgb})`);
-                        }}
-                        className="flex items-center gap-1 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
-                      >
-                        {hexToRgb(color.hex)
-                          ? `rgb(${hexToRgb(color.hex)})`
-                          : "-"}
-                        {copiedHex === `rgb(${hexToRgb(color.hex)})` ? (
-                          <Check className="h-3 w-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover/format:opacity-100" />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* RGBA */}
-                    <div className="group/format flex items-center justify-between font-mono text-xs text-stone-500 dark:text-stone-400">
-                      <span>RGBA</span>
-                      <button
-                        onClick={() => {
-                          const rgb = hexToRgb(color.hex);
-                          if (rgb) copyToClipboard(`rgba(${rgb}, 1)`);
-                        }}
-                        className="flex items-center gap-1 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
-                      >
-                        {hexToRgb(color.hex)
-                          ? `rgba(${hexToRgb(color.hex)}, 1)`
-                          : "-"}
-                        {copiedHex === `rgba(${hexToRgb(color.hex)}, 1)` ? (
-                          <Check className="h-3 w-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover/format:opacity-100" />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* CMYK */}
-                    {color.cmyk && (
-                      <div className="group/format flex items-center justify-between font-mono text-xs text-stone-500 dark:text-stone-400">
-                        <span>CMYK</span>
-                        <button
-                          onClick={() => copyToClipboard(color.cmyk!)}
-                          className="flex items-center gap-1 transition-colors hover:text-stone-900 dark:hover:text-stone-100"
-                        >
-                          {color.cmyk}
-                          {copiedHex === color.cmyk ? (
-                            <Check className="h-3 w-3 text-emerald-600" />
-                          ) : (
-                            <Copy className="h-3 w-3 opacity-0 transition-opacity group-hover/format:opacity-100" />
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-8">
+            <div className="mt-auto flex flex-col gap-2 pt-8">
+              <Link
+                href={`/combo/${combination.id}`}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md bg-stone-900 py-3 text-sm font-medium text-white transition-colors hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300"
+              >
+                Open page
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
               <button
                 onClick={onClose}
                 className="w-full rounded-md border border-stone-200 py-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 hover:text-stone-900 dark:border-stone-800 dark:text-stone-400 dark:hover:bg-stone-900 dark:hover:text-stone-100"
