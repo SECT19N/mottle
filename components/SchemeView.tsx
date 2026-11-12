@@ -29,9 +29,9 @@ export function SchemeView({
     "flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:text-stone-900 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400 dark:hover:text-stone-100";
 
   return (
-    <main className="min-h-screen bg-[#F4F1EA] px-4 py-6 sm:px-6 lg:px-8 dark:bg-stone-950">
-      <div className="mx-auto max-w-6xl">
-        <nav className="mb-8 flex items-center justify-between">
+    <main className="min-h-dvh bg-[#F4F1EA] px-4 py-6 sm:px-6 lg:h-dvh lg:px-8 dark:bg-stone-950">
+      <div className="mx-auto flex max-w-6xl flex-col lg:h-full">
+        <nav className="mb-6 flex shrink-0 items-center justify-between">
           <Link
             href="/"
             className="flex items-center gap-2 font-serif text-2xl text-stone-900 italic dark:text-stone-100"
@@ -42,9 +42,9 @@ export function SchemeView({
           <ThemeToggle />
         </nav>
 
-        <div className="flex flex-col overflow-hidden rounded-lg bg-white shadow-sm lg:flex-row dark:bg-stone-900">
+        <div className="flex flex-col gap-4 lg:min-h-[30rem] lg:flex-1 lg:flex-row lg:gap-6">
           {/* Swatches */}
-          <div className="flex h-72 flex-1 sm:h-96 lg:h-auto lg:min-h-[560px]">
+          <div className="flex h-72 flex-1 overflow-hidden rounded-lg shadow-sm sm:h-96 lg:h-full">
             {combination.colors.map((color) => {
               const ink = readableTextOn(color.hex);
               return (
@@ -72,8 +72,8 @@ export function SchemeView({
           </div>
 
           {/* Info */}
-          <div className="w-full border-stone-200 p-6 lg:w-96 lg:border-l lg:p-8 dark:border-stone-800 dark:bg-stone-950">
-            <div className="mb-8 flex items-start justify-between">
+          <div className="flex w-full flex-col overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm lg:h-full lg:w-96 dark:border-stone-800 dark:bg-stone-900">
+            <div className="flex shrink-0 items-start justify-between p-6 pb-4 lg:p-8 lg:pb-4">
               <div>
                 <h1 className="mb-1 font-serif text-3xl text-stone-900 italic dark:text-stone-100">
                   Combination {combination.id}
@@ -93,15 +93,17 @@ export function SchemeView({
                 />
               </div>
             </div>
-            <ColorSpecs
-              combination={combination}
-              copied={copied}
-              onCopy={copy}
-            />
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-8 lg:pb-8">
+              <ColorSpecs
+                combination={combination}
+                copied={copied}
+                onCopy={copy}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="mt-6 flex justify-between">
+        <div className="mt-4 flex shrink-0 justify-between">
           {prevId ? (
             <Link href={`/combo/${prevId}`} className={navLink}>
               <ArrowLeft className="h-4 w-4" />#{formatId(prevId)}

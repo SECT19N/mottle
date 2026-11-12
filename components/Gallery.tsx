@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { colorCombinations } from "@/data";
+import { colorCombinations, type ColorCombination } from "@/data";
 import { ColorCard, ColorDetail } from "@/components/ColorComponents";
 import { AnimatePresence } from "motion/react";
 import { Search, X, Heart } from "lucide-react";
@@ -20,12 +20,25 @@ const COLOR_CATEGORIES = [
   { name: "Gray", hex: "#3E4C53" },
 ];
 
+type Filter = "all" | ColorCombination["type"] | "saved" | "create";
+
+// Tabs follow whatever palette sizes exist in the data (2/3/4 and the lone 5-color).
+const TYPE_TABS = [...new Set(colorCombinations.map((c) => c.type))].sort();
+const FILTERS: Filter[] = ["all", ...TYPE_TABS, "saved", "create"];
+
+const nameHas = (name: string, term: string) =>
+  name.toLowerCase().includes(term.toLowerCase());
+
 export function Gallery() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<
-    "all" | "2-color" | "3-color" | "4-color" | "saved" | "create"
-  >("all");
-  const [colorFilter, setColorFilter] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [colorFilters, setColorFilters] = useState<string[]>([]);
+  const [matchMode, setMatchMode] = useState<"any" | "all">("any");
+
+  const toggleColorFilter = (name: string) =>
+    setColorFilters((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+    );
   const [searchQuery, setSearchQuery] = useState("");
   const { savedIds, toggle: toggleSave } = useSaved();
 
@@ -55,12 +68,12 @@ export function Gallery() {
         color.name.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesColor =
-        colorFilter === null ||
-        color.name.toLowerCase().includes(colorFilter.toLowerCase());
+        colorFilters.length === 0 ||
+        colorFilters.some((f) => nameHas(color.name, f));
 
       return matchesSearch && matchesColor;
     });
-  }, [allUniqueColors, searchQuery, colorFilter]);
+  }, [allUniqueColors, searchQuery, colorFilters]);
 
   const selectedCombination = useMemo(
     () => colorCombinations.find((c) => c.id === selectedId),
@@ -83,15 +96,17 @@ export function Gallery() {
           color.name.toLowerCase().includes(searchQuery.toLowerCase()),
         );
 
+      const hit = (f: string) =>
+        c.colors.some((color) => nameHas(color.name, f));
       const matchesColor =
-        colorFilter === null ||
-        c.colors.some((color) =>
-          color.name.toLowerCase().includes(colorFilter.toLowerCase()),
-        );
+        colorFilters.length === 0 ||
+        (matchMode === "all"
+          ? colorFilters.every(hit)
+          : colorFilters.some(hit));
 
       return matchesType && matchesSearch && matchesColor;
     });
-  }, [filter, searchQuery, colorFilter, savedIds]);
+  }, [filter, searchQuery, colorFilters, matchMode, savedIds]);
 
   return (
     <main className="min-h-screen bg-[#F4F1EA] px-4 py-8 transition-colors duration-300 sm:px-6 lg:px-8 dark:bg-stone-950">
@@ -131,16 +146,7 @@ export function Gallery() {
 
               {/* Type Filter Tabs */}
               <div className="no-scrollbar flex w-full overflow-x-auto rounded-full border border-stone-100 bg-white p-1 shadow-sm transition-colors sm:w-auto dark:border-stone-800 dark:bg-stone-900">
-                {(
-                  [
-                    "all",
-                    "2-color",
-                    "3-color",
-                    "4-color",
-                    "saved",
-                    "create",
-                  ] as const
-                ).map((type) => (
+                {FILTERS.map((type) => (
                   <button
                     key={type}
                     onClick={() => setFilter(type)}
@@ -174,13 +180,10 @@ export function Gallery() {
             {COLOR_CATEGORIES.map((category) => (
               <button
                 key={category.name}
-                onClick={() =>
-                  setColorFilter(
-                    colorFilter === category.name ? null : category.name,
-                  )
-                }
+                onClick={() => toggleColorFilter(category.name)}
+                aria-pressed={colorFilters.includes(category.name)}
                 className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-all ${
-                  colorFilter === category.name
+                  colorFilters.includes(category.name)
                     ? "border-stone-300 bg-white text-stone-900 shadow-sm ring-1 ring-stone-200 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:ring-stone-800"
                     : "border-transparent bg-transparent text-stone-600 hover:bg-white/60 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-900/60 dark:hover:text-stone-200"
                 }`}
@@ -192,9 +195,27 @@ export function Gallery() {
                 {category.name}
               </button>
             ))}
-            {colorFilter && (
+            {colorFilters.length > 1 && (
+              <div className="ml-2 flex shrink-0 rounded-full border border-stone-200 bg-white p-0.5 text-xs dark:border-stone-800 dark:bg-stone-900">
+                {(["any", "all"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMatchMode(m)}
+                    aria-pressed={matchMode === m}
+                    className={`rounded-full px-3 py-1 font-medium capitalize transition-colors ${
+                      matchMode === m
+                        ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+                        : "text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
+            {colorFilters.length > 0 && (
               <button
-                onClick={() => setColorFilter(null)}
+                onClick={() => setColorFilters([])}
                 className="ml-2 flex items-center gap-1 text-xs whitespace-nowrap text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
               >
                 <X className="h-3 w-3" />
