@@ -2,7 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, Fira_Code } from "next/font/google";
 import "./globals.css"; // Global styles
 import { ThemeProvider } from "@/components/theme-provider";
-import { SITE_DESCRIPTION, SITE_NAME, absoluteUrl } from "@/lib/site";
+import {
+  BASE_PATH,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  absoluteUrl,
+} from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,6 +33,11 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   alternates: { canonical: "/" },
+  // Static files in public/ (basePath isn't applied to these automatically).
+  icons: {
+    icon: { url: `${BASE_PATH}/icon.png`, type: "image/png", sizes: "192x192" },
+    apple: { url: `${BASE_PATH}/apple-icon.png`, sizes: "180x180" },
+  },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,

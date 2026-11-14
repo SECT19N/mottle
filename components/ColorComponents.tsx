@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { ColorCombination } from "@/data";
 import { cn, formatId, hexToRgb } from "@/lib/utils";
@@ -34,8 +35,7 @@ export const ColorCard = memo(function ColorCard({
 }: ColorCardProps) {
   return (
     <motion.div
-      className="group card-cv flex cursor-pointer flex-col gap-2"
-      onClick={onSelect && (() => onSelect(combination.id))}
+      className="group card-cv flex flex-col gap-2"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
@@ -51,6 +51,23 @@ export const ColorCard = memo(function ColorCard({
             />
           ))}
         </div>
+
+        {onSelect && (
+          // A real link so crawlers (and middle-click / "open in new tab") reach
+          // the combo page; a plain click opens the in-page detail instead.
+          <Link
+            href={`/combo/${combination.id}`}
+            prefetch={false}
+            aria-label={`Combination ${combination.id}: ${combination.colors.map((c) => c.name).join(", ")}`}
+            className="absolute inset-0 z-0 cursor-pointer"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button)
+                return;
+              e.preventDefault();
+              onSelect(combination.id);
+            }}
+          />
+        )}
 
         {onToggleSave && (
           <button
