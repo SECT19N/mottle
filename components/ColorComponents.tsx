@@ -34,7 +34,6 @@ export function ColorCard({
 }: ColorCardProps) {
   return (
     <motion.div
-      layoutId={`card-${combination.id}`}
       className="group flex cursor-pointer flex-col gap-2"
       onClick={onClick}
       initial={{ opacity: 0, y: 20 }}
@@ -243,10 +242,15 @@ export function ColorDetail({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm dark:bg-black/60"
+        transition={{ duration: 0.2 }}
+        className="absolute inset-0 bg-stone-900/50 dark:bg-black/70"
       />
       <motion.div
-        layoutId={`card-${combination.id}`}
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.97 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        style={{ willChange: "transform, opacity" }}
         className="relative z-10 flex h-[min(90dvh,44rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-[#F4F1EA] shadow-2xl dark:bg-stone-900"
       >
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
