@@ -199,9 +199,9 @@ export function Gallery() {
 
         {/* Grid */}
         {filter === "create" ? (
-          <div className="flex flex-col gap-12">
-            {/* Preview Section */}
-            <div className="mx-auto w-full max-w-md">
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-14">
+            {/* Preview: beside the colors on desktop, and stays in view while scrolling them */}
+            <div className="mx-auto w-full max-w-md lg:sticky lg:top-8 lg:mx-0 lg:w-[440px] lg:max-w-none lg:shrink-0">
               <h2 className="mb-6 text-center font-serif text-xl text-stone-900 italic dark:text-stone-100">
                 Your Palette
               </h2>
@@ -217,11 +217,14 @@ export function Gallery() {
                 />
               ) : (
                 <div className="flex aspect-[4/3] w-full items-center justify-center rounded-sm border-2 border-dashed border-stone-200 font-mono text-sm text-stone-400 dark:border-stone-800">
-                  Select colors below
+                  Select up to {MAX_BUILDER_COLORS} colors
                 </div>
               )}
               {builderColors.length > 0 && (
-                <div className="mt-4 flex justify-center">
+                <div className="mt-4 flex items-center justify-between px-1">
+                  <span className="font-mono text-xs text-stone-400">
+                    {builderColors.length}/{MAX_BUILDER_COLORS}
+                  </span>
                   <button
                     onClick={() => setBuilderColors([])}
                     className="text-xs text-stone-500 transition-colors hover:text-red-500"
@@ -233,46 +236,46 @@ export function Gallery() {
             </div>
 
             {/* Color Selection Grid */}
-            <div>
+            <div className="min-w-0 flex-1">
               <h2 className="mb-6 font-serif text-xl text-stone-900 italic dark:text-stone-100">
                 Available Colors
               </h2>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+              <div className="grid grid-cols-8 gap-1.5 sm:grid-cols-12 lg:grid-cols-16">
                 {filteredBuilderColors.map((color) => {
                   const isSelected = builderColors.some(
                     (c) => c.hex === color.hex,
                   );
+                  const isFull =
+                    !isSelected && builderColors.length >= MAX_BUILDER_COLORS;
                   return (
                     <button
                       key={color.hex}
-                      onClick={() => {
-                        if (isSelected) {
-                          setBuilderColors((prev) =>
-                            prev.filter((c) => c.hex !== color.hex),
-                          );
-                        } else {
-                          if (builderColors.length < MAX_BUILDER_COLORS) {
-                            setBuilderColors((prev) => [...prev, color]);
-                          }
-                        }
-                      }}
-                      className={`group relative aspect-square overflow-hidden rounded-sm transition-all ${
+                      onClick={() =>
+                        setBuilderColors((prev) =>
+                          isSelected
+                            ? prev.filter((c) => c.hex !== color.hex)
+                            : prev.length < MAX_BUILDER_COLORS
+                              ? [...prev, color]
+                              : prev,
+                        )
+                      }
+                      disabled={isFull}
+                      aria-pressed={isSelected}
+                      aria-label={color.name}
+                      title={`${color.name} ${color.hex}`}
+                      className={`relative aspect-square rounded-sm transition-all ${
                         isSelected
-                          ? "ring-2 ring-stone-900 ring-offset-2 dark:ring-stone-100 dark:ring-offset-stone-950"
-                          : "hover:scale-105"
+                          ? "ring-2 ring-stone-900 ring-offset-2 ring-offset-[#F4F1EA] dark:ring-stone-100 dark:ring-offset-stone-950"
+                          : isFull
+                            ? "cursor-not-allowed opacity-40"
+                            : "hover:z-10 hover:scale-110"
                       }`}
+                      style={{ backgroundColor: color.hex }}
                     >
-                      <div
-                        className="absolute inset-0"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <div className="absolute inset-x-0 bottom-0 truncate bg-black/50 p-1 font-mono text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                        {color.name}
-                      </div>
                       {isSelected && (
-                        <div className="absolute top-1 right-1 rounded-full bg-white p-0.5">
-                          <X className="h-3 w-3 text-stone-900" />
-                        </div>
+                        <span className="absolute top-0.5 right-0.5 rounded-full bg-white p-px">
+                          <X className="h-2.5 w-2.5 text-stone-900" />
+                        </span>
                       )}
                     </button>
                   );
