@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useDeferredValue } from "react";
+import dynamic from "next/dynamic";
 import { colorCombinations, type ColorCombination } from "@/data";
-import { ColorCard, ColorDetail } from "@/components/ColorComponents";
+import { ColorCard } from "@/components/ColorComponents";
 import { AnimatePresence } from "motion/react";
 import { Search, X, Heart } from "lucide-react";
 import { useSaved } from "@/hooks/use-saved";
@@ -14,6 +15,9 @@ import {
   matchesToken,
   COLOR_CATEGORIES,
 } from "@/lib/colors";
+
+// Loaded on first open so it stays out of the initial bundle.
+const ColorDetail = dynamic(() => import("@/components/ColorDetail"));
 
 type Filter = "all" | ColorCombination["type"] | "saved" | "create";
 
@@ -31,6 +35,17 @@ const allUniqueColors = (() => {
   );
 })();
 
+// Lowercased once so searching doesn't re-lowercase every name per keystroke.
+const LOWER_NAME = new Map(
+  allUniqueColors.map((c) => [c.hex, c.name.toLowerCase()]),
+);
+const COMBO_NAMES = new Map(
+  colorCombinations.map((c) => [
+    c.id,
+    c.colors.map((x) => x.name.toLowerCase()),
+  ]),
+);
+
 const TYPE_TABS = [...new Set(colorCombinations.map((c) => c.type))].sort();
 const FILTERS: Filter[] = ["all", ...TYPE_TABS, "saved", "create"];
 
@@ -45,7 +60,11 @@ export function Gallery() {
       prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
     );
   const [searchQuery, setSearchQuery] = useState("");
+  // Lets typing stay responsive while the grid filters at lower priority.
+  const deferredQuery = useDeferredValue(searchQuery);
   const { savedIds, toggle: toggleSave } = useSaved();
+  const savedSet = useMemo(() => new Set(savedIds), [savedIds]);
+  const handleSelect = useCallback((id: number) => setSelectedId(id), []);
 
   // Builder State
   const [builderColors, setBuilderColors] = useState<
@@ -54,10 +73,9 @@ export function Gallery() {
 
   // Filter unique colors for builder based on search/filter
   const filteredBuilderColors = useMemo(() => {
+    const q = deferredQuery.toLowerCase();
     return allUniqueColors.filter((color) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        color.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = q === "" || LOWER_NAME.get(color.hex)!.includes(q);
 
       const matchesColor =
         colorFilters.length === 0 ||
@@ -65,7 +83,7 @@ export function Gallery() {
 
       return matchesSearch && matchesColor;
     });
-  }, [searchQuery, colorFilters]);
+  }, [deferredQuery, colorFilters]);
 
   const selectedCombination = useMemo(
     () => colorCombinations.find((c) => c.id === selectedId),
@@ -73,6 +91,7 @@ export function Gallery() {
   );
 
   const filteredCombinations = useMemo(() => {
+    const q = deferredQuery.toLowerCase();
     return colorCombinations.filter((c) => {
       const matchesType =
         filter === "all"
@@ -82,11 +101,9 @@ export function Gallery() {
             : c.type === filter;
 
       const matchesSearch =
-        searchQuery === "" ||
-        c.id.toString().includes(searchQuery) ||
-        c.colors.some((color) =>
-          color.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
+        q === "" ||
+        c.id.toString().includes(q) ||
+        COMBO_NAMES.get(c.id)!.some((name) => name.includes(q));
 
       const hit = (f: string) =>
         c.colors.some((color) => matchesToken(color.hex, f));
@@ -98,7 +115,7 @@ export function Gallery() {
 
       return matchesType && matchesSearch && matchesColor;
     });
-  }, [filter, searchQuery, colorFilters, matchMode, savedIds]);
+  }, [filter, deferredQuery, colorFilters, matchMode, savedIds]);
 
   return (
     <main className="min-h-screen bg-[#F4F1EA] px-4 py-8 transition-colors duration-300 sm:px-6 lg:px-8 dark:bg-stone-950">
@@ -268,12 +285,9 @@ export function Gallery() {
                 <ColorCard
                   key={combination.id}
                   combination={combination}
-                  onClick={() => setSelectedId(combination.id)}
-                  isSaved={savedIds.includes(combination.id)}
-                  onToggleSave={(e) => {
-                    e?.stopPropagation();
-                    toggleSave(combination.id);
-                  }}
+                  onSelect={handleSelect}
+                  isSaved={savedSet.has(combination.id)}
+                  onToggleSave={toggleSave}
                 />
               ))}
             </AnimatePresence>

@@ -24,3 +24,14 @@ html.dark {
     display: none;
   }
 }
+
+/* Lets the browser skip rendering off-screen cards. `auto` in the intrinsic size
+   remembers each card's real height once seen, so scrollbar/jump-to-item stay
+   accurate. Padding + negative margin keep hover scale/shadow from being clipped
+   by the paint containment. */
+@utility card-cv {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 15rem;
+  padding: 0.75rem;
+  margin: -0.75rem;
+}
