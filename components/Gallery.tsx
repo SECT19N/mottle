@@ -139,7 +139,10 @@ export function Gallery() {
             </div>
 
             <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center md:w-auto">
-              <ThemeToggle />
+              {/* In the stacked mobile column a flex item stretches full width; keep the button its natural size. */}
+              <div className="self-start sm:self-auto">
+                <ThemeToggle />
+              </div>
 
               {/* Search */}
               <div className="relative w-full sm:w-auto">
