@@ -24,6 +24,8 @@ interface ColorCardProps {
   onSelect?: (id: number) => void;
   isSaved?: boolean;
   onToggleSave?: (id: number) => void;
+  /** Replaces the "#001" id caption (e.g. the builder shows the picked hex codes). */
+  label?: string;
 }
 
 /** Memoized: handlers must be referentially stable (they receive the id). */
@@ -32,6 +34,7 @@ export const ColorCard = memo(function ColorCard({
   onSelect,
   isSaved,
   onToggleSave,
+  label,
 }: ColorCardProps) {
   return (
     <motion.div
@@ -88,10 +91,10 @@ export const ColorCard = memo(function ColorCard({
         )}
       </div>
       <div className="flex items-baseline justify-between px-1">
-        <span className="font-mono text-xs text-stone-500 dark:text-stone-400">
-          #{formatId(combination.id)}
+        <span className="truncate font-mono text-xs text-stone-500 dark:text-stone-400">
+          {label ?? `#${formatId(combination.id)}`}
         </span>
-        <div className="flex gap-1">
+        <div className="flex shrink-0 gap-1 pl-2">
           {combination.colors.map((c, i) => (
             <div
               key={i}

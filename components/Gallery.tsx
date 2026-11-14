@@ -46,6 +46,9 @@ const COMBO_NAMES = new Map(
   ]),
 );
 
+// Sanzo Wada's book goes up to five-color combinations.
+const MAX_BUILDER_COLORS = 5;
+
 const TYPE_TABS = [...new Set(colorCombinations.map((c) => c.type))].sort();
 const FILTERS: Filter[] = ["all", ...TYPE_TABS, "saved", "create"];
 
@@ -121,7 +124,7 @@ export function Gallery() {
     <main className="min-h-screen bg-[#F4F1EA] px-4 py-8 transition-colors duration-300 sm:px-6 lg:px-8 dark:bg-stone-950">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <header className="mb-12 flex flex-col gap-8">
+        <header className="relative mb-12 flex flex-col gap-8">
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div>
               <h1 className="font-serif text-5xl font-medium tracking-tight text-stone-900 italic sm:text-6xl dark:text-stone-100">
@@ -139,8 +142,8 @@ export function Gallery() {
             </div>
 
             <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center md:w-auto">
-              {/* In the stacked mobile column a flex item stretches full width; keep the button its natural size. */}
-              <div className="self-start sm:self-auto">
+              {/* On phones it sits top-right beside the title instead of taking its own row. */}
+              <div className="absolute top-0 right-0 sm:static">
                 <ThemeToggle />
               </div>
 
@@ -206,14 +209,10 @@ export function Gallery() {
                 <ColorCard
                   combination={{
                     id: 0, // Dummy ID
-                    type:
-                      builderColors.length <= 2
-                        ? "2-color"
-                        : builderColors.length === 3
-                          ? "3-color"
-                          : "4-color",
+                    type: `${Math.max(builderColors.length, 2)}-color` as ColorCombination["type"],
                     colors: builderColors,
                   }}
+                  label={builderColors.map((c) => c.hex).join(" ")}
                   // No click handler for preview
                 />
               ) : (
@@ -252,7 +251,7 @@ export function Gallery() {
                             prev.filter((c) => c.hex !== color.hex),
                           );
                         } else {
-                          if (builderColors.length < 4) {
+                          if (builderColors.length < MAX_BUILDER_COLORS) {
                             setBuilderColors((prev) => [...prev, color]);
                           }
                         }
