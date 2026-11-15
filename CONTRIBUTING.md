@@ -23,10 +23,10 @@ pnpm dev          # http://localhost:3000
 
 ### 3. Make your changes
 
-* **Data:** Color combinations live in `data/combinations.json` (edit and
+- **Data:** Color combinations live in `data/combinations.json` (edit and
   rebuild; there is no CMS).
-* **UI:** Components are in `components/`, pages in `app/`.
-* **Styling:** Tailwind via `globals.css` and component classes.
+- **UI:** Components are in `components/`, pages in `app/`.
+- **Styling:** Tailwind via `globals.css` and component classes.
 
 ### 4. Lint and format
 
