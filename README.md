@@ -1,5 +1,9 @@
 # Mottle
 
+<p align="center">
+  <img src="public/mottle.jpg" alt="Mottle" width="700"/>
+</p>
+
 A digital archive of color combinations from Sanzo Wada's _A Dictionary of Color Combinations, Vol. 1_ (360 combinations).
 Static Next.js site: a filterable gallery plus one page per combination (`/combo/1` … `/combo/360`).
 
